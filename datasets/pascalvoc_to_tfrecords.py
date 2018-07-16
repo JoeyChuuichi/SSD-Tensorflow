@@ -80,7 +80,7 @@ def _process_image(directory, name):
     """
     # Read the image file.
     filename = directory + DIRECTORY_IMAGES + name + '.jpg'
-    image_data = tf.gfile.FastGFile(filename, 'r').read()
+    image_data = tf.gfile.FastGFile(filename, 'rb').read()
 
     # Read the XML annotation file.
     filename = os.path.join(directory, DIRECTORY_ANNOTATIONS, name + '.xml')
@@ -119,6 +119,60 @@ def _process_image(directory, name):
                        float(bbox.find('xmax').text) / shape[1]
                        ))
     return image_data, shape, bboxes, labels, labels_text, difficult, truncated
+
+def _process_image(directory, name):
+    """Process a image and annotation file.
+
+    Args:
+      filename: string, path to an image file e.g., '/path/to/example.JPG'.
+      coder: instance of ImageCoder to provide TensorFlow image coding utils.
+    Returns:
+      image_buffer: string, JPEG encoding of RGB image.
+      height: integer, image height in pixels.
+      width: integer, image width in pixels.
+    """
+    # Read the image file.
+    filename = directory + DIRECTORY_IMAGES + name + '.jpg'
+    image_data = tf.gfile.FastGFile(filename, 'rb').read()
+
+    # Read the XML annotation file.
+    filename = os.path.join(directory, DIRECTORY_ANNOTATIONS, name + '.xml')
+    tree = ET.parse(filename)
+    root = tree.getroot()
+
+    # Image shape.
+    size = root.find('size')
+    shape = [int(size.find('height').text),
+             int(size.find('width').text),
+             int(size.find('depth').text)]
+    # Find annotations.
+    bboxes = []
+    labels = []
+    labels_text = []
+    difficult = []
+    truncated = []
+    for obj in root.findall('object'):
+        label = obj.find('name').text
+        labels.append(int(VOC_LABELS[label][0]))
+        labels_text.append(label.encode('ascii'))
+
+        if obj.find('difficult'):
+            difficult.append(int(obj.find('difficult').text))
+        else:
+            difficult.append(0)
+        if obj.find('truncated'):
+            truncated.append(int(obj.find('truncated').text))
+        else:
+            truncated.append(0)
+
+        bbox = obj.find('bndbox')
+        bboxes.append((float(bbox.find('ymin').text) / shape[0],
+                       float(bbox.find('xmin').text) / shape[1],
+                       float(bbox.find('ymax').text) / shape[0],
+                       float(bbox.find('xmax').text) / shape[1]
+                       ))
+    return image_data, shape, bboxes, labels, labels_text, difficult, truncated
+
 
 
 def _convert_to_example(image_data, labels, labels_text, bboxes, shape,
@@ -181,7 +235,7 @@ def _add_to_tfrecord(dataset_dir, name, tfrecord_writer):
 
 
 def _get_output_filename(output_dir, name, idx):
-    return '%s/%s_%03d.tfrecord' % (output_dir, name, idx)
+    return '%s/%s/_%03d.tfrecord' % (output_dir, name, idx)
 
 
 def run(dataset_dir, output_dir, name='voc_train', shuffling=False):
@@ -204,9 +258,11 @@ def run(dataset_dir, output_dir, name='voc_train', shuffling=False):
     # Process dataset files.
     i = 0
     fidx = 0
+    #print(name)
     while i < len(filenames):
         # Open new TFRecord file.
         tf_filename = _get_output_filename(output_dir, name, fidx)
+        print(tf_filename)
         with tf.python_io.TFRecordWriter(tf_filename) as tfrecord_writer:
             j = 0
             while i < len(filenames) and j < SAMPLES_PER_FILES:
@@ -215,6 +271,10 @@ def run(dataset_dir, output_dir, name='voc_train', shuffling=False):
 
                 filename = filenames[i]
                 img_name = filename[:-4]
+                #if 'img' not in img_name:
+                #    i += 1
+                #    j += 1
+                #    continued
                 _add_to_tfrecord(dataset_dir, img_name, tfrecord_writer)
                 i += 1
                 j += 1

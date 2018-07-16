@@ -93,12 +93,18 @@ class SSDNet(object):
     """
     default_params = SSDParams(
         img_shape=(300, 300),
-        num_classes=21,
-        no_annotation_label=21,
+        num_classes=22,
+        no_annotation_label=22,
         feat_layers=['block4', 'block7', 'block8', 'block9', 'block10', 'block11'],
         feat_shapes=[(38, 38), (19, 19), (10, 10), (5, 5), (3, 3), (1, 1)],
         anchor_size_bounds=[0.15, 0.90],
         # anchor_size_bounds=[0.20, 0.90],
+        # anchor_sizes=[(20, 30.),
+        #               (30, 40.),
+        #               (40, 50.),
+        #               (50, 150.),
+        #               (150, 261.),
+        #               (261, 315.)],
         anchor_sizes=[(21., 45.),
                       (45., 99.),
                       (99., 153.),
@@ -111,12 +117,12 @@ class SSDNet(object):
         #               (162., 213.),
         #               (213., 264.),
         #               (264., 315.)],
-        anchor_ratios=[[2, .5],
-                       [2, .5, 3, 1./3],
-                       [2, .5, 3, 1./3],
-                       [2, .5, 3, 1./3],
-                       [2, .5],
-                       [2, .5]],
+        anchor_ratios=[[2, 6, 9, 11],
+                       [20, 40, 50, 60],
+                       [20, 50, 60, 80, 90, 100],
+                       [20, 40, 80],
+                       [20, 80, 160],
+                       [320]],
         anchor_steps=[8, 16, 32, 64, 100, 300],
         anchor_offset=0.5,
         normalizations=[20, -1, -1, -1, -1, -1],
@@ -233,7 +239,7 @@ class SSDNet(object):
     def losses(self, logits, localisations,
                gclasses, glocalisations, gscores,
                match_threshold=0.5,
-               negative_ratio=3.,
+               negative_ratio=1.,
                alpha=1.,
                label_smoothing=0.,
                scope='ssd_losses'):
@@ -357,6 +363,33 @@ def ssd_anchor_one_layer(img_shape,
         w[i+di] = sizes[0] / img_shape[1] * math.sqrt(r)
     return y, x, h, w
 
+def ssd_anchor_one_layer_new(img_shape,
+                             feat_shape,
+                             sizes,
+                             ratios,
+                             step,
+                             offset=0.5,
+                             dtype=np.float32,
+                             text_height_list=[8, 16],
+                             text_width_list=range(30, 200, 40)):
+    y, x = np.mgrid[0:feat_shape[0], 0:feat_shape[1]]
+    y = (y.astype(dtype) + offset) * step / img_shape[0]
+    x = (x.astype(dtype) + offset) * step / img_shape[1]
+
+    # Expand dims to support easy broadcasting.
+    y = np.expand_dims(y, axis=-1)
+    x = np.expand_dims(x, axis=-1)
+    num_anchors = text_width_list.__len__() * text_height_list.__len__()
+    h = np.zeros((num_anchors, ), dtype=dtype)
+    w = np.zeros((num_anchors, ), dtype=dtype)
+    i = 0
+    for text_height in text_height_list:
+        for text_width in text_width_list:
+            h[i] = (text_height+0.0) / img_shape[0]
+            w[i] = (text_width+0.0) / img_shape[1]
+            i += 1
+    return y, x, h, w
+
 
 def ssd_anchors_all_layers(img_shape,
                            layers_shape,
@@ -411,7 +444,7 @@ def ssd_multibox_layer(inputs,
         net = custom_layers.l2_normalization(net, scaling=True)
     # Number of anchors.
     num_anchors = len(sizes) + len(ratios)
-
+    #num_anchors = 25
     # Location.
     num_loc_pred = num_anchors * 4
     loc_pred = slim.conv2d(net, num_loc_pred, [3, 3], activation_fn=None,
@@ -577,8 +610,8 @@ def ssd_arg_scope_caffe(caffe_scope):
 # =========================================================================== #
 def ssd_losses(logits, localisations,
                gclasses, glocalisations, gscores,
-               match_threshold=0.5,
-               negative_ratio=3.,
+               match_threshold=0.2,
+               negative_ratio=1.,
                alpha=1.,
                label_smoothing=0.,
                device='/cpu:0',
@@ -634,12 +667,14 @@ def ssd_losses(logits, localisations,
         nmask = tf.logical_and(nmask, nvalues < max_hard_pred)
         fnmask = tf.cast(nmask, dtype)
 
+        tf.summary.scalar('fpmask', tf.reduce_sum(fpmask))
+        tf.summary.scalar('fnmask', tf.reduce_sum(fnmask))
         # Add cross-entropy loss.
         with tf.name_scope('cross_entropy_pos'):
             loss = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits,
                                                                   labels=gclasses)
-            loss = tf.div(tf.reduce_sum(loss * fpmask), batch_size, name='value')
-            tf.losses.add_loss(loss)
+            loss2 = tf.div(tf.reduce_sum(loss * fpmask), batch_size, name='value')
+            tf.losses.add_loss(loss2)
 
         with tf.name_scope('cross_entropy_neg'):
             loss = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits,
@@ -652,6 +687,7 @@ def ssd_losses(logits, localisations,
             # Weights Tensor: positive mask + random negative.
             weights = tf.expand_dims(alpha * fpmask, axis=-1)
             loss = custom_layers.abs_smooth(localisations - glocalisations)
+            tf.summary.scalar('abs_smooth', tf.reduce_sum(loss))
             loss = tf.div(tf.reduce_sum(loss * weights), batch_size, name='value')
             tf.losses.add_loss(loss)
 

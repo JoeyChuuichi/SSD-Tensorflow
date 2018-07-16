@@ -38,6 +38,11 @@ slim = tf.contrib.slim
 LIST_RECALLS = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.85,
                 0.90, 0.95, 0.96, 0.97, 0.98, 0.99]
 DATA_FORMAT = 'NHWC'
+CHECKPOINT_PATH='./checkpoints/model.ckpt-29488'
+DATASET_DIR='./tfrecords/CAPTCHA_testt/'
+
+EVAL_DIR='./logs_eval/'
+
 
 # =========================================================================== #
 # SSD evaluation Flags.
@@ -63,7 +68,7 @@ tf.app.flags.DEFINE_boolean(
 # Main evaluation flags.
 # =========================================================================== #
 tf.app.flags.DEFINE_integer(
-    'num_classes', 21, 'Number of classes to use in the dataset.')
+    'num_classes', 22, 'Number of classes to use in the dataset.')
 tf.app.flags.DEFINE_integer(
     'batch_size', 1, 'The number of samples in each batch.')
 tf.app.flags.DEFINE_integer(
@@ -71,23 +76,36 @@ tf.app.flags.DEFINE_integer(
     'Max number of batches to evaluate by default use all.')
 tf.app.flags.DEFINE_string(
     'master', '', 'The address of the TensorFlow master to use.')
+"""
 tf.app.flags.DEFINE_string(
-    'checkpoint_path', '/tmp/tfmodel/',
+    'checkpoint_path', './checkpoints/',
     'The directory where the model was written to or an absolute path to a '
     'checkpoint file.')
+"""
 tf.app.flags.DEFINE_string(
-    'eval_dir', '/tmp/tfmodel/', 'Directory where the results are saved to.')
+    'checkpoint_path', CHECKPOINT_PATH,
+    'The directory where the model was written to or an absolute path to a '
+    'checkpoint file.')
+
+tf.app.flags.DEFINE_string(
+    'eval_dir', './logs_eval/', 'Directory where the results are saved to.')
 tf.app.flags.DEFINE_integer(
     'num_preprocessing_threads', 4,
     'The number of threads used to create the batches.')
 tf.app.flags.DEFINE_string(
-    'dataset_name', 'imagenet', 'The name of the dataset to load.')
+    'dataset_name', 'pascalvoc_2007', 'The name of the dataset to load.')
 tf.app.flags.DEFINE_string(
     'dataset_split_name', 'test', 'The name of the train/test split.')
+"""
 tf.app.flags.DEFINE_string(
-    'dataset_dir', None, 'The directory where the dataset files are stored.')
+    'dataset_dir', './tfrecords/CAPTCHA_testt', 'The directory where the dataset files are stored.')
+
+"""
 tf.app.flags.DEFINE_string(
-    'model_name', 'inception_v3', 'The name of the architecture to evaluate.')
+    'dataset_dir', DATASET_DIR, 'The directory where the dataset files are stored.')
+
+tf.app.flags.DEFINE_string(
+    'model_name', 'ssd_512_vgg', 'The name of the architecture to evaluate.')
 tf.app.flags.DEFINE_string(
     'preprocessing_name', None, 'The name of the preprocessing to use. If left '
     'as `None`, then the model_name flag is used.')
@@ -96,13 +114,21 @@ tf.app.flags.DEFINE_float(
     'The decay to use for the moving average.'
     'If left as None, then moving averages are not used.')
 tf.app.flags.DEFINE_float(
-    'gpu_memory_fraction', 0.1, 'GPU memory fraction to use.')
+    'gpu_memory_fraction', 0.8, 'GPU memory fraction to use.')
 tf.app.flags.DEFINE_boolean(
     'wait_for_checkpoints', False, 'Wait for new checkpoints in the eval loop.')
 
 
 FLAGS = tf.app.flags.FLAGS
 
+def flatten(x):
+    result = []
+    for el in x:
+         if isinstance(el, tuple):
+               result.extend(flatten(el))
+         else:
+               result.append(el)
+    return result
 
 def main(_):
     if not FLAGS.dataset_dir:
@@ -315,7 +341,7 @@ def main(_):
                 checkpoint_path=checkpoint_path,
                 logdir=FLAGS.eval_dir,
                 num_evals=num_batches,
-                eval_op=list(names_to_updates.values()),
+                eval_op=flatten(list(names_to_updates.values())),
                 variables_to_restore=variables_to_restore,
                 session_config=config)
             # Log time spent.
@@ -334,7 +360,7 @@ def main(_):
                 checkpoint_dir=checkpoint_path,
                 logdir=FLAGS.eval_dir,
                 num_evals=num_batches,
-                eval_op=list(names_to_updates.values()),
+                eval_op=flatten(list(names_to_updates.values())),
                 variables_to_restore=variables_to_restore,
                 eval_interval_secs=60,
                 max_number_of_evaluations=np.inf,

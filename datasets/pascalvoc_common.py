@@ -43,6 +43,7 @@ VOC_LABELS = {
     'sofa': (18, 'Indoor'),
     'train': (19, 'Vehicle'),
     'tvmonitor': (20, 'Indoor'),
+    'text': (21, 'text')
 }
 
 
@@ -105,7 +106,7 @@ def get_split(split_name, dataset_dir, file_pattern, reader,
     # else:
     #     labels_to_names = create_readable_names_for_imagenet_labels()
     #     dataset_utils.write_label_file(labels_to_names, dataset_dir)
-
+    print("labels_to_names=", labels_to_names)
     return slim.dataset.Dataset(
             data_sources=file_pattern,
             reader=reader,

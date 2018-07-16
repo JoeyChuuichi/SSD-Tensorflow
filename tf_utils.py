@@ -191,7 +191,10 @@ def get_init_fn(flags):
     Returns:
       An init function run by the supervisor.
     """
-    if flags.checkpoint_path is None:
+    print("########", flags.checkpoint_path)
+    print(flags.checkpoint_path.__len__())
+    print(flags.checkpoint_path == str(None))
+    if flags.checkpoint_path == str(None):
         return None
     # Warn the user if a checkpoint exists in the train_dir. Then ignore.
     if tf.train.latest_checkpoint(flags.train_dir):

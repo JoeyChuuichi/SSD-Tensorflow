@@ -43,6 +43,8 @@ def tf_ssd_bboxes_encode_layer(labels,
     Return:
       (target_labels, target_localizations, target_scores): Target Tensors.
     """
+    #print("@@@@@@@@@@@@@@@@@@@@@@")
+    #print(labels)
     # Anchors coordinates and volume.
     yref, xref, href, wref = anchors_layer
     ymin = yref - href / 2.
@@ -123,7 +125,8 @@ def tf_ssd_bboxes_encode_layer(labels,
         feat_xmin = fmask * bbox[1] + (1 - fmask) * feat_xmin
         feat_ymax = fmask * bbox[2] + (1 - fmask) * feat_ymax
         feat_xmax = fmask * bbox[3] + (1 - fmask) * feat_xmax
-
+        #print("qqqqqqqqqqqqqqqqqqqqqqqq")
+        #print(i)
         # Check no annotation label: ignore these anchors...
         # interscts = intersection_with_anchors(bbox)
         # mask = tf.logical_and(interscts > ignore_threshold,
@@ -141,6 +144,9 @@ def tf_ssd_bboxes_encode_layer(labels,
                                            [i, feat_labels, feat_scores,
                                             feat_ymin, feat_xmin,
                                             feat_ymax, feat_xmax])
+    #print("$$$$$$$$$$$$$$$$$$$\n","i=",i)
+    #print("aaaaaaaaaaaaaaaaaaaaaaaaaaa")
+    #tf.Session().run(i)
     # Transform to center / size.
     feat_cy = (feat_ymax + feat_ymin) / 2.
     feat_cx = (feat_xmax + feat_xmin) / 2.

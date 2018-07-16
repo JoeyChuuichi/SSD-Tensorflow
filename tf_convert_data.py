@@ -25,7 +25,7 @@ python tf_convert_data.py \
 ```
 """
 import tensorflow as tf
-
+import os
 from datasets import pascalvoc_to_tfrecords
 
 FLAGS = tf.app.flags.FLAGS
@@ -34,13 +34,13 @@ tf.app.flags.DEFINE_string(
     'dataset_name', 'pascalvoc',
     'The name of the dataset to convert.')
 tf.app.flags.DEFINE_string(
-    'dataset_dir', None,
+    'dataset_dir', './CAPTCHA/',
     'Directory where the original dataset is stored.')
 tf.app.flags.DEFINE_string(
-    'output_name', 'pascalvoc',
+    'output_name', 'CAPTCHA_testt',
     'Basename used for TFRecords output files.')
 tf.app.flags.DEFINE_string(
-    'output_dir', './',
+    'output_dir', './tfrecords',
     'Output directory where to store TFRecords files.')
 
 
@@ -49,7 +49,8 @@ def main(_):
         raise ValueError('You must supply the dataset directory with --dataset_dir')
     print('Dataset directory:', FLAGS.dataset_dir)
     print('Output directory:', FLAGS.output_dir)
-
+    if not os.path.exists(os.path.join(FLAGS.output_dir, FLAGS.output_name)):
+        os.mkdir(os.path.join(FLAGS.output_dir, FLAGS.output_name))
     if FLAGS.dataset_name == 'pascalvoc':
         pascalvoc_to_tfrecords.run(FLAGS.dataset_dir, FLAGS.output_dir, FLAGS.output_name)
     else:

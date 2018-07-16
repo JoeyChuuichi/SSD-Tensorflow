@@ -27,30 +27,33 @@ ITEMS_TO_DESCRIPTIONS = {
     'object/label': 'A list of labels, one per each object.',
 }
 # (Images, Objects) statistics on every class.
+
 TRAIN_STATISTICS = {
     'none': (0, 0),
-    'aeroplane': (238, 306),
-    'bicycle': (243, 353),
-    'bird': (330, 486),
-    'boat': (181, 290),
-    'bottle': (244, 505),
-    'bus': (186, 229),
-    'car': (713, 1250),
-    'cat': (337, 376),
-    'chair': (445, 798),
-    'cow': (141, 259),
-    'diningtable': (200, 215),
-    'dog': (421, 510),
-    'horse': (287, 362),
-    'motorbike': (245, 339),
-    'person': (2008, 4690),
-    'pottedplant': (245, 514),
-    'sheep': (96, 257),
-    'sofa': (229, 248),
-    'train': (261, 297),
-    'tvmonitor': (256, 324),
-    'total': (5011, 12608),
+    'aeroplane': (0, 0),
+    'bicycle': (0, 0),
+    'bird': (0, 0),
+    'boat': (0, 0),
+    'bottle': (0, 0),
+    'bus': (0, 0),
+    'car': (0, 0),
+    'cat': (0, 0),
+    'chair': (0, 0),
+    'cow': (0, 0),
+    'diningtable': (0, 0),
+    'dog': (0, 0),
+    'horse': (0, 0),
+    'motorbike': (0, 0),
+    'person': (0, 0),
+    'pottedplant': (0, 0),
+    'sheep': (0, 0),
+    'sofa': (0, 0),
+    'train': (0, 0),
+    'tvmonitor': (0, 0),
+    'text':(555, 31440),
+    'total': (555, 31440),
 }
+
 TEST_STATISTICS = {
     'none': (0, 0),
     'aeroplane': (1, 1),
@@ -73,17 +76,18 @@ TEST_STATISTICS = {
     'sofa': (1, 1),
     'train': (1, 1),
     'tvmonitor': (1, 1),
-    'total': (20, 20),
+    'text': (1, 1),
+    'total': (21, 21),
 }
 SPLITS_TO_SIZES = {
-    'train': 5011,
-    'test': 4952,
+    'train': 444,
+    'test': 111,
 }
 SPLITS_TO_STATISTICS = {
     'train': TRAIN_STATISTICS,
     'test': TEST_STATISTICS,
 }
-NUM_CLASSES = 20
+NUM_CLASSES = 21
 
 
 def get_split(split_name, dataset_dir, file_pattern=None, reader=None):

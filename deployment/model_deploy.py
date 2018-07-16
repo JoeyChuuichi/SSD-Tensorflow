@@ -168,7 +168,7 @@ def create_clones(config, model_fn, args=None, kwargs=None):
     model clones as `model_fn(*args, **kwargs)`.
 
     If `config` specifies deployment on multiple replicas then the default
-    tensorflow device is set appropriatly for each call to `model_fn` and for the
+    tensorflow device is set appropriatly for each call to `model_fn` and ifor the
     slim variable creation functions: model and global variables will be created
     on the `ps` device, the clone operations will be on the `worker` device.
 
@@ -182,12 +182,17 @@ def create_clones(config, model_fn, args=None, kwargs=None):
         A list of namedtuples `Clone`.
     """
     clones = []
+    print("args=", args)
+    print("kwargs=", kwargs)
+    #for i in args:
+        #print(i.eval())
     args = args or []
     kwargs = kwargs or {}
     with slim.arg_scope([slim.model_variable, slim.variable],
                         device=config.variables_device()):
         # Create clones.
         for i in range(0, config.num_clones):
+            print("###################","i=",i,"##################")
             with tf.name_scope(config.clone_scope(i)) as clone_scope:
                 clone_device = config.clone_device(i)
                 with tf.device(clone_device):
